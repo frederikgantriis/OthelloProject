@@ -23,9 +23,10 @@ public class BobAI implements IOthelloAI {
         int v = Integer.MIN_VALUE;
         for (Position p : s.legalMoves()) {
             Tuple minOutCome = new Tuple(0, new Position(0, 0));
-            s.insertToken(p);
+            
 
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
+            s2.insertToken(p);
             //Consider the Gamestate call, since we don't know which colour our bot is playing
             minOutCome = MinValue(s2, alpha, beta);
             if (minOutCome.value() >= v) {
@@ -58,8 +59,8 @@ public class BobAI implements IOthelloAI {
         for (Position p : s.legalMoves()) {
             Tuple maxOutCome = new Tuple(0, new Position(0, 0));
             
-            s.insertToken(p);
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
+            s2.insertToken(p);
             //Consider the Gamestate call, since we don't know which colour our bot is playing
             maxOutCome = MaxValue(s2, alpha, beta);
             if (maxOutCome.value() <= v) {
