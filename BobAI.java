@@ -58,12 +58,4 @@ public class BobAI implements IOthelloAI {
         }
         return new Tuple(v, move);
     }
-
-    public Boolean IsTerminal(GameState s) {
-        return s.isFinished();
-    }
-
-    public Tuple Evaluate(GameState s) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }
