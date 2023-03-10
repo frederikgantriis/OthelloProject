@@ -4,20 +4,16 @@ public class BobAI implements IOthelloAI {
     
     public Position decideMove(GameState s) {
         Tuple bobOutcome = new Tuple(0, new Position(0, 0));
-        bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
         return bobOutcome.position();
     }
 
-    public Tuple MaxValue(GameState s, int alpha, int beta) {
+    public Tuple MaxValue(GameState s, int alpha, int beta, int depth) {
         Position move = new Position(0, 0);
 
-        if (s.isFinished()) {
-            int[] score = s.countTokens();
-            int playerNumber = s.getPlayerInTurn();
-            s.changePlayer();
-            int opponentNumber = s.getPlayerInTurn();
+        if (isCutOff(s, depth)) {
 
-            return new Tuple(score[playerNumber-1] - score[opponentNumber-1], new Position(0, 0));
+            return new Tuple(evaluate(s), new Position(0, 0));
         }
 
         int v = Integer.MIN_VALUE;
@@ -27,8 +23,8 @@ public class BobAI implements IOthelloAI {
 
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             s2.insertToken(p);
-            //Consider the Gamestate call, since we don't know which colour our bot is playing
-            minOutCome = MinValue(s2, alpha, beta);
+
+            minOutCome = MinValue(s2, alpha, beta, depth + 1);
             if (minOutCome.value() >= v) {
                 v = minOutCome.value();
                 move = p;
@@ -43,16 +39,12 @@ public class BobAI implements IOthelloAI {
         return new Tuple(v, move);
     }
 
-    public Tuple MinValue(GameState s, int alpha, int beta) {
+    public Tuple MinValue(GameState s, int alpha, int beta, int depth) {
         Position move = new Position(0, 0);
 
-        if (s.isFinished()) {
-            int[] score = s.countTokens();
-            int opponentNumber = s.getPlayerInTurn();
-            s.changePlayer();
-            int playerNumber = s.getPlayerInTurn();
+        if (isCutOff(s, depth)) {
 
-            return new Tuple(score[playerNumber-1] - score[opponentNumber-1], new Position(0, 0));
+            return new Tuple(evaluate(s), new Position(0, 0));
         }
 
         int v = Integer.MAX_VALUE;
@@ -61,8 +53,8 @@ public class BobAI implements IOthelloAI {
             
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             s2.insertToken(p);
-            //Consider the Gamestate call, since we don't know which colour our bot is playing
-            maxOutCome = MaxValue(s2, alpha, beta);
+
+            maxOutCome = MaxValue(s2, alpha, beta, depth + 1);
             if (maxOutCome.value() <= v) {
                 v = maxOutCome.value();
                 move = p;
@@ -73,5 +65,18 @@ public class BobAI implements IOthelloAI {
             }
         }
         return new Tuple(v, move);
+    }
+
+    public Integer evaluate(GameState s) {
+        int[] score = s.countTokens();
+        int playerNumber = s.getPlayerInTurn();
+        s.changePlayer();
+        int opponentNumber = s.getPlayerInTurn();
+
+        return score[playerNumber-1] - score[opponentNumber-1];
+    }
+
+    public boolean isCutOff(GameState s, int depth) {
+        return depth >= 12;
     }
 }
