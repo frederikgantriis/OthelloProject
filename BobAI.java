@@ -1,7 +1,9 @@
-record Tuple(Integer value, Position position) {}
-
 public class BobAI implements IOthelloAI {
+    record Tuple(Integer value, Position position) {}
+
+    
     public Position decideMove(GameState s) {
+
         Tuple bobOutcome = new Tuple(0, new Position(0, 0));
         bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE);
         return bobOutcome.position();
@@ -12,18 +14,23 @@ public class BobAI implements IOthelloAI {
 
         if (s.isFinished()) {
             int[] score = s.countTokens();
-            return new Tuple(score[0] - score[1], new Position(0, 0));
+            int playerNumber = s.getPlayerInTurn();
+            s.changePlayer();
+            int opponentNumber = s.getPlayerInTurn();
+
+            return new Tuple(score[playerNumber-1] - score[opponentNumber-1], new Position(0, 0));
         }
 
         int v = Integer.MIN_VALUE;
         for (Position p : s.legalMoves()) {
             Tuple minOutCome = new Tuple(0, new Position(0, 0));
-
+            s.insertToken(p);
+            s.changePlayer();
             //Consider the Gamestate call, since we don't know which colour our bot is playing
-            minOutCome = MinValue(new GameState(s.getBoard(), 1), alpha, beta);
+            minOutCome = MinValue(s, alpha, beta);
             if (minOutCome.value() >= v) {
                 v = minOutCome.value();
-                move = minOutCome.position();
+                move = p;
                 alpha = Math.max(alpha, v);
             }
             if (v >= beta) {
@@ -38,18 +45,24 @@ public class BobAI implements IOthelloAI {
 
         if (s.isFinished()) {
             int[] score = s.countTokens();
-            return new Tuple(score[0] - score[1], new Position(0, 0));
+            int playerNumber = s.getPlayerInTurn();
+            s.changePlayer();
+            int opponentNumber = s.getPlayerInTurn();
+
+            return new Tuple(score[playerNumber-1] - score[opponentNumber-1], new Position(0, 0));
         }
 
         int v = Integer.MAX_VALUE;
         for (Position p : s.legalMoves()) {
             Tuple maxOutCome = new Tuple(0, new Position(0, 0));
-
+            
+            s.insertToken(p);
+            s.changePlayer();
             //Consider the Gamestate call, since we don't know which colour our bot is playing
-            maxOutCome = MaxValue(new GameState(s.getBoard(), 1), alpha, beta);
+            maxOutCome = MaxValue(s, alpha, beta);
             if (maxOutCome.value() <= v) {
                 v = maxOutCome.value();
-                move = maxOutCome.position();
+                move = p;
                 beta = Math.min(beta, v);
             }
             if (v <= alpha) {
