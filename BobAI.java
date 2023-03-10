@@ -1,3 +1,5 @@
+import java.util.Map;
+
 public class BobAI implements IOthelloAI {
     record Tuple(Integer value, Position position) {}
 
@@ -11,7 +13,7 @@ public class BobAI implements IOthelloAI {
     public Tuple MaxValue(GameState s, int alpha, int beta, int depth) {
         Position move = new Position(0, 0);
 
-        if (isCutOff(s, depth)) {
+        if (isCutOff(s, depth) || s.isFinished()) {
 
             return new Tuple(evaluate(s), new Position(0, 0));
         }
@@ -42,7 +44,7 @@ public class BobAI implements IOthelloAI {
     public Tuple MinValue(GameState s, int alpha, int beta, int depth) {
         Position move = new Position(0, 0);
 
-        if (isCutOff(s, depth)) {
+        if (isCutOff(s, depth) || s.isFinished()) {
 
             return new Tuple(evaluate(s), new Position(0, 0));
         }
@@ -68,15 +70,47 @@ public class BobAI implements IOthelloAI {
     }
 
     public Integer evaluate(GameState s) {
-        int[] score = s.countTokens();
         int playerNumber = s.getPlayerInTurn();
         s.changePlayer();
         int opponentNumber = s.getPlayerInTurn();
 
-        return score[playerNumber-1] - score[opponentNumber-1];
+        int[][] board = s.getBoard();
+
+        int[][] pointboard = makeHeuristic(board);
+
+        int playerScore = 0;
+        int opponentScore = 0;
+
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] == playerNumber) {
+                    playerScore += pointboard[i][j];
+                } else if (board[i][j] == opponentNumber) {
+                    opponentScore += pointboard[i][j];
+                }
+            }
+        }
+
+        return playerScore - opponentScore;
+    }
+
+    public int[][] makeHeuristic(int[][] board) {
+        int[][] pointboard = new int[board.length][board.length];
+
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (i == 0 && j == 0) {
+                    pointboard[i][j] = 4000000;
+                } else {
+                    pointboard[i][j] = -400000;
+                }
+            }
+        }
+
+        return pointboard;
     }
 
     public boolean isCutOff(GameState s, int depth) {
-        return depth >= 12;
+        return depth >= 9;
     }
 }

@@ -87,6 +87,10 @@ public class Othello
         	f.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE);
         	f.getContentPane().add(g);    
         	f.setVisible(true);
+
+            while(true) {
+                g.mouseClicked(null);
+            }
         }
         catch (IOException e){
         	errMsg = "Images not found at " + System.getProperty("user.dir") + "\\imgs";
