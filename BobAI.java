@@ -3,7 +3,6 @@ public class BobAI implements IOthelloAI {
 
     
     public Position decideMove(GameState s) {
-
         Tuple bobOutcome = new Tuple(0, new Position(0, 0));
         bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE);
         return bobOutcome.position();
@@ -25,9 +24,10 @@ public class BobAI implements IOthelloAI {
         for (Position p : s.legalMoves()) {
             Tuple minOutCome = new Tuple(0, new Position(0, 0));
             s.insertToken(p);
-            s.changePlayer();
+
+            GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             //Consider the Gamestate call, since we don't know which colour our bot is playing
-            minOutCome = MinValue(s, alpha, beta);
+            minOutCome = MinValue(s2, alpha, beta);
             if (minOutCome.value() >= v) {
                 v = minOutCome.value();
                 move = p;
@@ -36,6 +36,8 @@ public class BobAI implements IOthelloAI {
             if (v >= beta) {
                 return new Tuple(v, move);
             }
+
+            move = p;
         }
         return new Tuple(v, move);
     }
@@ -45,9 +47,9 @@ public class BobAI implements IOthelloAI {
 
         if (s.isFinished()) {
             int[] score = s.countTokens();
-            int playerNumber = s.getPlayerInTurn();
-            s.changePlayer();
             int opponentNumber = s.getPlayerInTurn();
+            s.changePlayer();
+            int playerNumber = s.getPlayerInTurn();
 
             return new Tuple(score[playerNumber-1] - score[opponentNumber-1], new Position(0, 0));
         }
@@ -57,9 +59,9 @@ public class BobAI implements IOthelloAI {
             Tuple maxOutCome = new Tuple(0, new Position(0, 0));
             
             s.insertToken(p);
-            s.changePlayer();
+            GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             //Consider the Gamestate call, since we don't know which colour our bot is playing
-            maxOutCome = MaxValue(s, alpha, beta);
+            maxOutCome = MaxValue(s2, alpha, beta);
             if (maxOutCome.value() <= v) {
                 v = maxOutCome.value();
                 move = p;
