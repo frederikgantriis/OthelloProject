@@ -90,7 +90,8 @@ public class BobAI implements IOthelloAI {
                 }
             }
         }
-
+        
+        
         return playerScore - opponentScore;
     }
 
