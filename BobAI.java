@@ -1,9 +1,9 @@
 import java.util.Map;
 
-public class LisAI implements IOthelloAI {
+public class BobAI implements IOthelloAI {
     record Tuple(Integer value, Position position) {}
 
-    
+
     public Position decideMove(GameState s) {
         Tuple bobOutcome = new Tuple(0, new Position(0, 0));
         bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
