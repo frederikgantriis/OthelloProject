@@ -13,8 +13,6 @@ public class BobAI implements IOthelloAI {
 
         Tuple bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
 
-        printAnalysis(bobOutcome, s);
-
         return bobOutcome.position();
     }
 
@@ -165,17 +163,7 @@ public class BobAI implements IOthelloAI {
         return playerValue > opponentValue ? 101 : -101;
     }
 
-    /**
-     * Prints the analysis of the best move
-     * @param Tuple bobOutcome
-     * @param GameState s
-     */
-    public void printAnalysis(Tuple bobOutcome, GameState s) {
-        System.out.println("Bob's move: " + bobOutcome.position());
-        System.out.println("Bob's score: " + bobOutcome.value());
-        System.out.println("Player in turn: " + s.getPlayerInTurn());
-        System.out.println("Is finished: " + s.isFinished());
-        System.out.println("Legal moves: " + s.legalMoves().size());    
-        System.out.println();
+    public boolean isCutOff(GameState s, int depth) {
+        return depth >= 6;
     }
 }
