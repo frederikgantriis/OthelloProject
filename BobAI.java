@@ -1,6 +1,6 @@
 import java.util.Map;
 
-public class BobAI implements IOthelloAI {
+public class LisAI implements IOthelloAI {
     record Tuple(Integer value, Position position) {}
 
     
