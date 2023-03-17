@@ -114,4 +114,47 @@ public class BobAI implements IOthelloAI {
     public boolean isCutOff(GameState s, int depth) {
         return depth >= 9;
     }
+
+    public int CornerHeuristic(GameState s) {
+        var player = s.getPlayerInTurn();
+        var oppent = player == 1 ? 2 : 1;
+        var playerValue = cornerValue(s, player);
+        var opponentValue = cornerValue(s, oppent);
+        if ((playerValue + opponentValue != 0)) {
+            return 100 * (playerValue - opponentValue)/(playerValue + opponentValue);
+        }
+        return 0;
+    }
+
+    public int cornerValue(GameState s, int player) {
+        var capturedCorners = 0;
+        var board = s.getBoard();
+        if (board[0][0] == player) capturedCorners++;
+        if (board[0][board.length-1] == player) capturedCorners++;
+        if (board[board.length-1][0] == player) capturedCorners++;
+        if (board[board.length-1][board.length-1] == player) capturedCorners++;
+        var potentialCorners = 0;
+        for (Position move : s.legalMoves()) {
+            if ((move.col == 0 || move.col == board.length-1) && (move.row == 0 || move.row == board.length-1)) {
+                potentialCorners++;
+            }
+        }
+
+        return capturedCorners*2 + potentialCorners;
+    }
+    public int whoWon(GameState s){
+        var player = s.getPlayerInTurn();
+        var oppent = player == 1 ? 2 : 1;
+        var playerValue = 0;
+        var opponentValue = 0;
+        var board = s.getBoard();
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                if(board[i][j] == player) playerValue++;
+                else opponentValue++;
+            }
+        }
+        
+        return playerValue > opponentValue ? 101 : -101;
+    }
 }
