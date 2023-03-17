@@ -1,57 +1,66 @@
-import java.util.Map;
-
 public class BobAI implements IOthelloAI {
     record Tuple(Integer value, Position position) {}
 
+    private static Position standardPos = new Position(-1, -1);
     
     public Position decideMove(GameState s) {
-        Tuple bobOutcome = new Tuple(0, new Position(0, 0));
+        
+        Tuple bobOutcome = new Tuple(0, standardPos);
         bobOutcome = MaxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+
+        System.out.println("Bob's move: " + bobOutcome.position());
+        System.out.println("Bob's score: " + bobOutcome.value());
+        System.out.println("Player in turn: " + s.getPlayerInTurn());
+        System.out.println("Is finished: " + s.isFinished());
+        System.out.println("Legal moves: " + s.legalMoves().size());    
+        System.out.println();
+
         return bobOutcome.position();
     }
 
     public Tuple MaxValue(GameState s, int alpha, int beta, int depth) {
-        Position move = new Position(0, 0);
+        Position move = standardPos;
 
-        if (isCutOff(s, depth) || s.isFinished()) {
+        if (isCutOff(s, depth) || s.legalMoves().size() == 0) return new Tuple(CornerHeuristic(s), standardPos);
 
-            return new Tuple(evaluate(s), new Position(0, 0));
-        }
+        if (s.isFinished()) return new Tuple(whoWon(s), standardPos);
 
         int v = Integer.MIN_VALUE;
-        for (Position p : s.legalMoves()) {
-            Tuple minOutCome = new Tuple(0, new Position(0, 0));
-            
 
+        
+        for (Position p : s.legalMoves()) {
+            Tuple minOutCome = new Tuple(0, standardPos);
+            
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             s2.insertToken(p);
 
             minOutCome = MinValue(s2, alpha, beta, depth + 1);
+
             if (minOutCome.value() >= v) {
                 v = minOutCome.value();
                 move = p;
                 alpha = Math.max(alpha, v);
             }
-            if (v >= beta) {
-                return new Tuple(v, move);
-            }
+
+            if (v >= beta) return new Tuple(v, move);
 
             move = p;
         }
+        
         return new Tuple(v, move);
     }
 
     public Tuple MinValue(GameState s, int alpha, int beta, int depth) {
-        Position move = new Position(0, 0);
+        Position move = standardPos;
 
-        if (isCutOff(s, depth) || s.isFinished()) {
+        if (isCutOff(s, depth) || s.legalMoves().size() == 0) return new Tuple(CornerHeuristic(s), standardPos);
 
-            return new Tuple(evaluate(s), new Position(0, 0));
-        }
-
+        if (s.isFinished()) return new Tuple(whoWon(s), standardPos);
+        
         int v = Integer.MAX_VALUE;
+
         for (Position p : s.legalMoves()) {
-            Tuple maxOutCome = new Tuple(0, new Position(0, 0));
+            Tuple maxOutCome = new Tuple(0, standardPos);
             
             GameState s2 = new GameState(s.getBoard(), s.getPlayerInTurn());
             s2.insertToken(p);
@@ -62,57 +71,15 @@ public class BobAI implements IOthelloAI {
                 move = p;
                 beta = Math.min(beta, v);
             }
-            if (v <= alpha) {
-                return new Tuple(v, move);
-            }
+
+            if (v <= alpha) return new Tuple(v, move);
         }
+
         return new Tuple(v, move);
     }
 
-    public Integer evaluate(GameState s) {
-        int playerNumber = s.getPlayerInTurn();
-        s.changePlayer();
-        int opponentNumber = s.getPlayerInTurn();
-
-        int[][] board = s.getBoard();
-
-        int[][] pointboard = makeHeuristic(board);
-
-        int playerScore = 0;
-        int opponentScore = 0;
-
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (board[i][j] == playerNumber) {
-                    playerScore += pointboard[i][j];
-                } else if (board[i][j] == opponentNumber) {
-                    opponentScore += pointboard[i][j];
-                }
-            }
-        }
-        
-        
-        return playerScore - opponentScore;
-    }
-
-    public int[][] makeHeuristic(int[][] board) {
-        int[][] pointboard = new int[board.length][board.length];
-
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (i == 0 && j == 0) {
-                    pointboard[i][j] = 4000000;
-                } else {
-                    pointboard[i][j] = -400000;
-                }
-            }
-        }
-
-        return pointboard;
-    }
-
     public boolean isCutOff(GameState s, int depth) {
-        return depth >= 9;
+        return depth >= 5;
     }
 
     public int CornerHeuristic(GameState s) {
@@ -140,11 +107,10 @@ public class BobAI implements IOthelloAI {
             }
         }
 
-        return capturedCorners*2 + potentialCorners;
+        return capturedCorners + potentialCorners;
     }
     public int whoWon(GameState s){
         var player = s.getPlayerInTurn();
-        var oppent = player == 1 ? 2 : 1;
         var playerValue = 0;
         var opponentValue = 0;
         var board = s.getBoard();
