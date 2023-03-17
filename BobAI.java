@@ -112,6 +112,6 @@ public class BobAI implements IOthelloAI {
     }
 
     public boolean isCutOff(GameState s, int depth) {
-        return depth >= 9;
+        return depth >= 6;
     }
 }

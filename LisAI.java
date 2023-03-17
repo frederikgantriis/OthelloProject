@@ -37,14 +37,42 @@ public class LisAI implements IOthelloAI {
                 case Max -> v == beta || this.cmp.apply(v, beta);
             };
         }
+    }
+    
+    public int evaluate(GameState s, MinMax minmax) {
+        return heuristic(s, switch (minmax) {
+            case Min -> s.getPlayerInTurn() == 1 ? 2 : 1;
+            case Max -> s.getPlayerInTurn();
+        });
+    }
 
-        int evaluate(GameState s) {
-            var tokens = s.countTokens();
-            return switch (this) {
-                case Min -> tokens[s.getPlayerInTurn() == 1 ? 1 : 0] - tokens[s.getPlayerInTurn() - 1];
-                case Max -> tokens[s.getPlayerInTurn() - 1] - tokens[s.getPlayerInTurn() == 1 ? 1 : 0];
-            };
+    public int heuristic(GameState s, int player) {
+        var opponent = player == 1 ? 2 : 1;
+        var playerValue = cornerValue(s, player);
+        var opponentValue = cornerValue(s, opponent);
+        if ((playerValue + opponentValue != 0)) {
+            return 100 * (playerValue - opponentValue)/(playerValue + opponentValue);
         }
+        return 0;
+    }
+
+    public int cornerValue(GameState s, int player) {
+        var capturedCorners = 0;
+        var board = s.getBoard();
+
+        if (board[0][0] == player) capturedCorners++;
+        if (board[0][board.length-1] == player) capturedCorners++;
+        if (board[board.length-1][0] == player) capturedCorners++;
+        if (board[board.length-1][board.length-1] == player) capturedCorners++;
+
+        var potentialCorners = 0;
+        for (Position move : s.legalMoves()) {
+            if ((move.col == 0 || move.col == board.length-1) && (move.row == 0 || move.row == board.length-1)) {
+                potentialCorners++;
+            }
+        }
+
+        return capturedCorners + potentialCorners;
     }
     
     public Position decideMove(GameState s) {
@@ -54,7 +82,7 @@ public class LisAI implements IOthelloAI {
 
     public Tuple Value(GameState s, int alpha, int beta, int depth, MinMax minmax) {
         if (s.isFinished() || isCutOff(depth) || s.legalMoves().size() == 0) {
-            return new Tuple(minmax.evaluate(s), null);
+            return new Tuple(evaluate(s, minmax), null);
         }
 
         var v = minmax.extreme;
@@ -76,11 +104,10 @@ public class LisAI implements IOthelloAI {
             }
         }
 
-        if (v == minmax.extreme) System.out.println("other");
         return new Tuple(v, move);
     }
 
     public boolean isCutOff(int depth) {
-        return depth >= 2;
+        return depth >= 6;
     }
 }
