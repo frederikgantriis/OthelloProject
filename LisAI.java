@@ -1,7 +1,8 @@
 import java.util.function.BiFunction;
 
-public class BobAI implements IOthelloAI {
+public class LisAI implements IOthelloAI {
     record Tuple(Integer value, Position position) {}
+
     enum MinMax {
         Min((a, b) -> a < b, Integer.MAX_VALUE, (alpha, v) -> alpha, Math::min),
         Max((a, b) -> a > b, Integer.MIN_VALUE, Math::max, (beta, v) -> beta);
@@ -36,6 +37,14 @@ public class BobAI implements IOthelloAI {
                 case Max -> v == beta || this.cmp.apply(v, beta);
             };
         }
+
+        int evaluate(GameState s) {
+            var tokens = s.countTokens();
+            return switch (this) {
+                case Min -> tokens[s.getPlayerInTurn() == 1 ? 1 : 0] - tokens[s.getPlayerInTurn() - 1];
+                case Max -> tokens[s.getPlayerInTurn() - 1] - tokens[s.getPlayerInTurn() == 1 ? 1 : 0];
+            };
+        }
     }
     
     public Position decideMove(GameState s) {
@@ -44,8 +53,8 @@ public class BobAI implements IOthelloAI {
     }
 
     public Tuple Value(GameState s, int alpha, int beta, int depth, MinMax minmax) {
-        if (s.isFinished() || isCutOff(depth)) {
-            return new Tuple(evaluate(s), null);
+        if (s.isFinished() || isCutOff(depth) || s.legalMoves().size() == 0) {
+            return new Tuple(minmax.evaluate(s), null);
         }
 
         var v = minmax.extreme;
@@ -67,52 +76,11 @@ public class BobAI implements IOthelloAI {
             }
         }
 
+        if (v == minmax.extreme) System.out.println("other");
         return new Tuple(v, move);
     }
 
-    public Integer evaluate(GameState s) {
-        int playerNumber = s.getPlayerInTurn();
-        s.changePlayer();
-        int opponentNumber = s.getPlayerInTurn();
-
-        int[][] board = s.getBoard();
-
-        int[][] pointboard = makeHeuristic(board);
-
-        int playerScore = 0;
-        int opponentScore = 0;
-
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (board[i][j] == playerNumber) {
-                    playerScore += pointboard[i][j];
-                } else if (board[i][j] == opponentNumber) {
-                    opponentScore += pointboard[i][j];
-                }
-            }
-        }
-        
-        
-        return playerScore - opponentScore;
-    }
-
-    public int[][] makeHeuristic(int[][] board) {
-        int[][] pointboard = new int[board.length][board.length];
-
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (i == 0 && j == 0) {
-                    pointboard[i][j] = 4000000;
-                } else {
-                    pointboard[i][j] = -400000;
-                }
-            }
-        }
-
-        return pointboard;
-    }
-
     public boolean isCutOff(int depth) {
-        return depth >= 8;
+        return depth >= 2;
     }
 }
