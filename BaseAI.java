@@ -40,31 +40,33 @@ public abstract class BaseAI implements IOthelloAI {
         }
     }
 
-    public int evaluate(GameState s, MinMax minmax) {
+    public int evaluate(BetterGameState s, MinMax minmax) {
         return heuristic(s, switch (minmax) {
             case Min -> s.getPlayerInTurn() == 1 ? 2 : 1;
             case Max -> s.getPlayerInTurn();
         });
     }
 
-    public abstract int heuristic(GameState s, int player);
+    public abstract int heuristic(BetterGameState s, int player);
 
     public abstract boolean isCutOff(int depth);
 
     public Position decideMove(GameState s) {
-        var move = Value(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, MinMax.Max);
+        var state = new BetterGameState(s);
+        var move = Value(state, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, MinMax.Max);
         return move.position();
     }
 
-    public Tuple Value(GameState s, int alpha, int beta, int depth, MinMax minmax) {
-        if (s.isFinished() || isCutOff(depth) || s.legalMoves().size() == 0) {
+    public Tuple Value(BetterGameState s, int alpha, int beta, int depth, MinMax minmax) {
+        if (s.isFinished() || isCutOff(depth) || !s.legalMoves().hasNext()) {
             return new Tuple(evaluate(s, minmax), null);
         }
 
         var v = minmax.extreme;
         var move = new Position(-1, -1);
-        for (var action : s.legalMoves()) {
-            var sNew = new GameState(s.getBoard(), s.getPlayerInTurn());
+        for (var it = s.legalMoves(); it.hasNext(); ) {
+            var action = it.next();
+            var sNew = new BetterGameState(s);
             sNew.insertToken(action);
             var result = Value(sNew, alpha, beta, depth + 1, minmax.next());
 

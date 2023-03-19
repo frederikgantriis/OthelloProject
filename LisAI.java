@@ -1,7 +1,7 @@
 public class LisAI extends BaseAI {
 
     @Override
-    public int heuristic(GameState s, int player) {
+    public int heuristic(BetterGameState s, int player) {
         var opponent = player == 1 ? 2 : 1;
         var playerValue = cornerValue(s, player);
         var opponentValue = cornerValue(s, opponent);
@@ -11,7 +11,7 @@ public class LisAI extends BaseAI {
         return 0;
     }
 
-    public int cornerValue(GameState s, int player) {
+    public int cornerValue(BetterGameState s, int player) {
         var capturedCorners = 0;
         var board = s.getBoard();
 
@@ -21,7 +21,8 @@ public class LisAI extends BaseAI {
         if (board[board.length - 1][board.length - 1] == player) capturedCorners++;
 
         var potentialCorners = 0;
-        for (Position move : s.legalMoves()) {
+        for (var it = s.legalMoves(); it.hasNext(); ) {
+            var move = it.next();
             if ((move.col == 0 || move.col == board.length - 1) && (move.row == 0 || move.row == board.length - 1)) {
                 potentialCorners++;
             }
