@@ -1,3 +1,4 @@
+import java.util.Random;
 import java.util.function.BiFunction;
 
 public abstract class BaseAI implements IOthelloAI {
@@ -47,6 +48,8 @@ public abstract class BaseAI implements IOthelloAI {
         });
     }
 
+    public Random random = new Random();
+
     public abstract int heuristic(BetterGameState s, int player);
 
     public abstract boolean isCutOff(int depth);
@@ -70,7 +73,10 @@ public abstract class BaseAI implements IOthelloAI {
             sNew.insertToken(action);
             var result = Value(sNew, alpha, beta, depth + 1, minmax.next());
 
-            if (minmax.cmp.apply(result.value(), v)) {
+            if (minmax.cmp.apply(result.value(), v)
+                    // Low chance that, if the value is the same, we choose this move instead. It makes it easier to
+                    // test AIs against each other.
+                    || depth == 0 && result.value() == v && random.nextDouble() < .1) {
                 v = result.value();
                 move = action;
                 alpha = minmax.alpha.apply(alpha, v);
