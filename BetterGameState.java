@@ -243,14 +243,10 @@ public class BetterGameState {
 
                 while (positions.hasNext()) {
                     var p = positions.next();
-                    for (int deltax = -1; deltax <= 1; deltax++) {
-                        for (int deltay = -1; deltay <= 1; deltay++) {
-                            if (captureInDirection(p, deltax, deltay) > 0) {
-                                advance = false;
-                                next = p;
-                                return true;
-                            }
-                        }
+                    if (isLegalMove(p)) {
+                        advance = false;
+                        next = p;
+                        return true;
                     }
                 }
 
@@ -269,6 +265,25 @@ public class BetterGameState {
                 }
             }
         };
+    }
+
+    /**
+     * Returns whether the position is a legal move for the current player.
+     */
+    public boolean isLegalMove(Position p) {
+        if (board[p.col][p.row] != 0) {
+            return false;
+        }
+
+        for (int deltax = -1; deltax <= 1; deltax++) {
+            for (int deltay = -1; deltay <= 1; deltay++) {
+                if (!(deltax == 0 && deltay == 0) && captureInDirection(p, deltax, deltay) > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
