@@ -52,7 +52,9 @@ public abstract class BaseAI implements IOthelloAI {
 
     public abstract int heuristic(BetterGameState s, int player);
 
-    public abstract boolean isCutOff(int depth);
+    public boolean isCutOff(int depth) {
+        return depth >= 8;
+    }
 
     public Position decideMove(GameState s) {
         var state = new BetterGameState(s);
@@ -61,8 +63,13 @@ public abstract class BaseAI implements IOthelloAI {
     }
 
     public Tuple Value(BetterGameState s, int alpha, int beta, int depth, MinMax minmax) {
-        if (s.isFinished() || isCutOff(depth) || !s.legalMoves().hasNext()) {
+        if (s.isFinished() || isCutOff(depth)) {
             return new Tuple(evaluate(s, minmax), null);
+        }
+
+        if (!s.legalMoves().hasNext()) {
+            s.changePlayer();
+            return new Tuple(Value(s, alpha, beta, depth + 1, minmax.next()).value(), null);
         }
 
         var v = minmax.extreme;
