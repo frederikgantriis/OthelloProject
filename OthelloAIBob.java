@@ -1,13 +1,7 @@
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.util.*;
 import java.util.function.BiFunction;
 
-public class OthelloAIBob extends BaseAI {
-    @Override
-    public int heuristic(BetterGameState s, int player) {
-        return 0;
-    }
+public class OthelloAIBob extends CornersMovesTokens {
 }
 
 class Corners extends BaseAI {
@@ -22,12 +16,22 @@ class Tokens extends BaseAI {
     public int heuristic(BetterGameState s, int player) {
         return Heuristic.tokens(s, player);
     }
+
+    @Override
+    public boolean isCutOff(int depth) {
+        return depth >= 8;
+    }
 }
 
 class Moves extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
         return Heuristic.moves(s);
+    }
+
+    @Override
+    public boolean isCutOff(int depth) {
+        return depth >= 6;
     }
 }
 
@@ -43,12 +47,22 @@ class MovesTokens extends BaseAI {
     public int heuristic(BetterGameState s, int player) {
         return 100 * Heuristic.moves(s) + Heuristic.tokens(s, player);
     }
+
+    @Override
+    public boolean isCutOff(int depth) {
+        return depth >= 6;
+    }
 }
 
 class CornersMovesTokens extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
         return 10000 * Heuristic.corners(s, player) + 100 * Heuristic.moves(s) + Heuristic.tokens(s, player);
+    }
+
+    @Override
+    public boolean isCutOff(int depth) {
+        return depth >= 6;
     }
 }
 
@@ -169,7 +183,7 @@ abstract class BaseAI implements IOthelloAI {
     public abstract int heuristic(BetterGameState s, int player);
 
     public boolean isCutOff(int depth) {
-        return depth >= 9;
+        return depth >= 7;
     }
 
     public Position decideMove(GameState s) {
@@ -183,23 +197,29 @@ abstract class BaseAI implements IOthelloAI {
             return new Tuple(evaluate(s, minmax), null);
         }
 
-        if (!s.legalMoves().hasNext()) {
+        var it = s.legalMoves();
+        if (!it.hasNext()) {
             s.changePlayer();
             return new Tuple(Value(s, alpha, beta, depth + 1, minmax.next()).value(), null);
         }
 
         var v = minmax.extreme;
         var move = new Position(-1, -1);
-        for (var it = s.legalMoves(); it.hasNext(); ) {
+
+        if (depth == 0) {
+            var actions = new ArrayList<Position>();
+            it.forEachRemaining(actions::add);
+            Collections.shuffle(actions);
+            it = actions.iterator();
+        }
+
+        while (it.hasNext()) {
             var action = it.next();
             var sNew = new BetterGameState(s);
             sNew.insertToken(action);
             var result = Value(sNew, alpha, beta, depth + 1, minmax.next());
 
-            if (minmax.cmp.apply(result.value(), v)
-                    // Low chance that, if the value is the same, we choose this move instead. It makes it easier to
-                    // test AIs against each other.
-                    || depth == 0 && result.value() == v && random.nextDouble() < .2) {
+            if (minmax.cmp.apply(result.value(), v)) {
                 v = result.value();
                 move = action;
                 alpha = minmax.alpha.apply(alpha, v);
