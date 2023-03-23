@@ -2,6 +2,10 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 public class OthelloAIBob extends CornersMovesTokens {
+    @Override
+    public boolean isCutOff(int depth) {
+        return depth >= 10;
+    }
 }
 
 class Corners extends BaseAI {
