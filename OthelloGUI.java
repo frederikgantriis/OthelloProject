@@ -64,6 +64,8 @@ public class OthelloGUI extends JComponent implements MouseListener
     	this.addMouseListener(this);
     }
 
+	int blacks, whites, ties;
+
     /**
      * Draws the current game board and shows if someone won.
      */
@@ -95,16 +97,32 @@ public class OthelloGUI extends JComponent implements MouseListener
     	g.drawImage(corner_left_bottom, 0, size*imgSize+imgSize, this);
     	g.drawImage(corner_right_top, imgSize+imgSize*size, 0, this);
     	g.drawImage(corner_right_bottom, imgSize+imgSize*size, size*imgSize+imgSize, this);
-		
+
     	if ( state.isFinished() ){
     		int[] tokens = state.countTokens();
-    		if ( tokens[0] > tokens[1] )
+    		if ( tokens[0] > tokens[1] ) {
     			g.drawImage(blackWon, size*imgSize/2-(imgSize/2), size*imgSize/2+(imgSize/4), this);
-    		else if ( tokens[0] < tokens[1] )
+				blacks++;
+			}
+    		else if ( tokens[0] < tokens[1] ) {
     			g.drawImage(whiteWon, size*imgSize/2-(imgSize/2), size*imgSize/2+(imgSize/4), this);
-    		else
+				whites++;
+			}
+    		else {
     			g.drawImage(tie, size*imgSize/2-(imgSize/2), size*imgSize/2+(imgSize/4), this);
-    	}		
+				ties++;
+			}
+			//System.out.println("Games: " + (blacks + whites + ties) + ", Black wins: " + blacks + ", White wins: " + whites + ", Ties: " + ties);
+			if (blacks + whites + ties < 50) {
+				this.state = new GameState(size, 1);
+			} else {
+				System.out.printf("%s/%s %d/%d/%d %.0f%%\n", ai1.getClass().getName(), ai2.getClass().getName(), blacks, whites, ties, blacks / (blacks + whites + .0) * 100);
+				Othello.restart = true;
+				blacks = 0;
+				whites = 0;
+				ties = 0;
+			}
+		}
     }
 
     public void mouseClicked(MouseEvent e){

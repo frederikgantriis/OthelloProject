@@ -11,7 +11,9 @@ import java.lang.reflect.*;
  */
 public class Othello
 {
+    record Pair(IOthelloAI ai1, IOthelloAI ai2) {}
     public static String HUMAN_CMD = "human";
+    public static boolean restart = false;
 	
 	/**
      * Valid arguments: ai1 ai2 size 
@@ -76,25 +78,109 @@ public class Othello
         	printHelp(errMsg);
            	System.exit(1);
         }
-        
+
+        Pair[] ais = new Pair[] {
+                new Pair(new DumAI(), new DumAI()),
+                new Pair(new DumAI(), new RandomAI()),
+                new Pair(new DumAI(), new Tokens()),
+                new Pair(new DumAI(), new Corners()),
+                new Pair(new DumAI(), new Moves()),
+                new Pair(new DumAI(), new CornersTokens()),
+                new Pair(new DumAI(), new MovesTokens()),
+                new Pair(new DumAI(), new CornersMovesTokens()),
+
+                new Pair(new RandomAI(), new DumAI()),
+                new Pair(new RandomAI(), new RandomAI()),
+                new Pair(new RandomAI(), new Tokens()),
+                new Pair(new RandomAI(), new Corners()),
+                new Pair(new RandomAI(), new Moves()),
+                new Pair(new RandomAI(), new CornersTokens()),
+                new Pair(new RandomAI(), new MovesTokens()),
+                new Pair(new RandomAI(), new CornersMovesTokens()),
+
+                new Pair(new Tokens(), new DumAI()),
+                new Pair(new Tokens(), new RandomAI()),
+                new Pair(new Tokens(), new Tokens()),
+                new Pair(new Tokens(), new Corners()),
+                new Pair(new Tokens(), new Moves()),
+                new Pair(new Tokens(), new CornersTokens()),
+                new Pair(new Tokens(), new MovesTokens()),
+                new Pair(new Tokens(), new CornersMovesTokens()),
+
+                new Pair(new Corners(), new DumAI()),
+                new Pair(new Corners(), new RandomAI()),
+                new Pair(new Corners(), new Tokens()),
+                new Pair(new Corners(), new Corners()),
+                new Pair(new Corners(), new Moves()),
+                new Pair(new Corners(), new CornersTokens()),
+                new Pair(new Corners(), new MovesTokens()),
+                new Pair(new Corners(), new CornersMovesTokens()),
+
+                new Pair(new Moves(), new DumAI()),
+                new Pair(new Moves(), new RandomAI()),
+                new Pair(new Moves(), new Tokens()),
+                new Pair(new Moves(), new Corners()),
+                new Pair(new Moves(), new Moves()),
+                new Pair(new Moves(), new CornersTokens()),
+                new Pair(new Moves(), new MovesTokens()),
+                new Pair(new Moves(), new CornersMovesTokens()),
+
+                new Pair(new CornersTokens(), new DumAI()),
+                new Pair(new CornersTokens(), new RandomAI()),
+                new Pair(new CornersTokens(), new Tokens()),
+                new Pair(new CornersTokens(), new Corners()),
+                new Pair(new CornersTokens(), new Moves()),
+                new Pair(new CornersTokens(), new CornersTokens()),
+                new Pair(new CornersTokens(), new MovesTokens()),
+                new Pair(new CornersTokens(), new CornersMovesTokens()),
+
+                new Pair(new MovesTokens(), new DumAI()),
+                new Pair(new MovesTokens(), new RandomAI()),
+                new Pair(new MovesTokens(), new Tokens()),
+                new Pair(new MovesTokens(), new Corners()),
+                new Pair(new MovesTokens(), new Moves()),
+                new Pair(new MovesTokens(), new CornersTokens()),
+                new Pair(new MovesTokens(), new MovesTokens()),
+                new Pair(new MovesTokens(), new CornersMovesTokens()),
+
+                new Pair(new CornersMovesTokens(), new DumAI()),
+                new Pair(new CornersMovesTokens(), new RandomAI()),
+                new Pair(new CornersMovesTokens(), new Tokens()),
+                new Pair(new CornersMovesTokens(), new Corners()),
+                new Pair(new CornersMovesTokens(), new Moves()),
+                new Pair(new CornersMovesTokens(), new CornersTokens()),
+                new Pair(new CornersMovesTokens(), new MovesTokens()),
+                new Pair(new CornersMovesTokens(), new CornersMovesTokens()),
+        };
+
+        // Setup of the frame containing the game
+        JFrame f = new JFrame();
+        f.setSize((size + 2) * 100, (size + 2) * 100);
+        f.setTitle("Othello");
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+
         try{
-        	OthelloGUI g = new OthelloGUI(ai1, ai2, size, ai1 == null);
+            for (var pair : ais) {
+                restart = false;
+                OthelloGUI g = new OthelloGUI(pair.ai1(), pair.ai2(), size, false);
 
-        	// Setup of the frame containing the game
-        	JFrame f = new JFrame();
-        	f.setSize((size+2)*100,(size+2)*100);
-        	f.setTitle("Othello");
-        	f.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE);
-        	f.getContentPane().add(g);    
-        	f.setVisible(true);
+                f.getContentPane().add(g);
+                f.setVisible(true);
 
-            while(true) {
-                g.mouseClicked(null);
+                while (!restart) {
+                    Thread.sleep(1);
+                    g.mouseClicked(null);
+                }
+
+                f.getContentPane().remove(g);
             }
         }
         catch (IOException e){
         	errMsg = "Images not found at " + System.getProperty("user.dir") + "\\imgs";
         	err = true;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
         if(err) {
