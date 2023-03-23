@@ -3,19 +3,69 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.function.BiFunction;
 
-public class OthelloAIBob {
+public class OthelloAIBob extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return 0;
+    }
 }
 
+class Corners extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return Heuristic.corners(s, player);
+    }
+}
+
+class Tokens extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return Heuristic.tokens(s, player);
+    }
+}
+
+class Moves extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return Heuristic.moves(s);
+    }
+}
+
+class CornersTokens extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return 100 * Heuristic.corners(s, player) + Heuristic.tokens(s, player);
+    }
+}
+
+class MovesTokens extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return 100 * Heuristic.moves(s) + Heuristic.tokens(s, player);
+    }
+}
+
+class CornersMovesTokens extends BaseAI {
+    @Override
+    public int heuristic(BetterGameState s, int player) {
+        return 10000 * Heuristic.corners(s, player) + 100 * Heuristic.moves(s) + Heuristic.tokens(s, player);
+    }
+}
+
+class RandomAI implements IOthelloAI {
+    Random random = new Random();
+
+    public Position decideMove(GameState s) {
+        var moves = s.legalMoves();
+        return moves.get(random.nextInt(moves.size()));
+    }
+}
 
 class Heuristic {
+    public static int moves(BetterGameState s) {
+        // Get as few moves for the opponent as possible
 
-    public static int moves(BetterGameState s, int player) {
-        // Get as many moves as possible
-
-        if (s.getPlayerInTurn() != player) {
-            player = s.getPlayerInTurn();
-            s.changePlayer();
-        }
+        s.changePlayer();
 
         var count = 0;
         for (var it = s.legalMoves(); it.hasNext(); ) {
@@ -23,20 +73,19 @@ class Heuristic {
             count++;
         }
 
-        if (s.getPlayerInTurn() != player) {
-            s.changePlayer();
-        }
+        s.changePlayer();
 
-        return count;
+        return -count;
     }
-    
+
     public static int tokens(BetterGameState s, int player) {
         // Get as many tokens as possible.
 
         var opponent = player == 1 ? 2 : 1;
-        var tokens = s.countTokens();
+        var playerTokens = s.countTokens(player);
+        var opponentTokens = s.countTokens(opponent);
 
-        return (tokens[player - 1] - tokens[opponent - 1]) / ((tokens[player - 1] + tokens[opponent - 1]) * 100);
+        return (int)((playerTokens - opponentTokens) / (playerTokens + opponentTokens + .0) * 100);
     }
 
     public static int corners(BetterGameState s, int player) {
@@ -120,7 +169,7 @@ abstract class BaseAI implements IOthelloAI {
     public abstract int heuristic(BetterGameState s, int player);
 
     public boolean isCutOff(int depth) {
-        return depth >= 8;
+        return depth >= 9;
     }
 
     public Position decideMove(GameState s) {
@@ -177,6 +226,8 @@ class BetterGameState {
     private final int[][] board;        // Possible values: 0 (empty), 1 (black), 2 (white)
     private int currentPlayer;    // The player who is next to put a token on the board. Value is 1 or 2.
     private final int size;            // The number of columns = the number of rows on the board
+    private int blackTokens;
+    private int whiteTokens;
 
     //************ Constructors ****************//
 
@@ -208,7 +259,7 @@ class BetterGameState {
      * @param playerToTakeTurn The player who will be the first to take a turn. Should be 1 (black)
      *                         or 2 (white)
      */
-    public BetterGameState(int[][] board, int playerToTakeTurn) {
+    public BetterGameState(int[][] board, int playerToTakeTurn, int black, int white) {
         this.size = board.length;
         this.board = new int[size][size];
         for (int i = 0; i < size; i++) {
@@ -218,11 +269,14 @@ class BetterGameState {
     }
 
     public BetterGameState(GameState s) {
-        this(s.getBoard(), s.getPlayerInTurn());
+        this(s.getBoard(), s.getPlayerInTurn(), 0, 0);
+        var tokens = countTokens(s.getBoard());
+        blackTokens = tokens[0];
+        whiteTokens = tokens[1];
     }
 
     public BetterGameState(BetterGameState s) {
-        this(s.getBoard(), s.getPlayerInTurn());
+        this(s.getBoard(), s.getPlayerInTurn(), s.countTokens(1), s.countTokens(2));
     }
 
     //************ Getter methods *******************//
@@ -272,18 +326,25 @@ class BetterGameState {
      * Counts tokens of the player 1 (black) and player 2 (white), respectively, and returns an array
      * with the numbers in that order.
      */
-    public int[] countTokens() {
+    public static int[] countTokens(int[][] board) {
         int tokens1 = 0;
         int tokens2 = 0;
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (board[i][j] == 1)
+        for (int[] ints : board) {
+            for (int v : ints) {
+                if (v == 1)
                     tokens1++;
-                else if (board[i][j] == 2)
+                else if (v == 2)
                     tokens2++;
             }
         }
         return new int[]{tokens1, tokens2};
+    }
+
+    public int countTokens(int player) {
+        if (player == 1)
+            return blackTokens;
+        else
+            return whiteTokens;
     }
 
     /**
@@ -298,10 +359,12 @@ class BetterGameState {
             return false;
 
         boolean capturesFound = false;
+        var captures = 1;
         // Capturing all possible opponents of the current player
         for (int deltaX = -1; deltaX <= 1; deltaX++) {
             for (int deltaY = -1; deltaY <= 1; deltaY++) {
                 int captives = captureInDirection(place, deltaX, deltaY);
+                captures += captives;
                 if (captives > 0) {
                     capturesFound = true;
                     for (int i = 1; i <= captives; i++)
@@ -313,6 +376,10 @@ class BetterGameState {
         if (capturesFound) {
             // Place the token at the given place
             board[place.col][place.row] = currentPlayer;
+            if (currentPlayer == 1)
+                blackTokens += captures;
+            else
+                whiteTokens += captures;
             this.changePlayer();
             return true;
         } else {
