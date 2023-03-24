@@ -53,11 +53,11 @@ class CornersTokens extends BaseAI {
     }
 }
 
-// AI that weighs moves highest, then tokens.
-class MovesTokens extends BaseAI {
+// AI that weighs corners highest, then tokens, then moves.
+class CornersTokensMoves extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
-        return 100 * Heuristic.moves(s) + Heuristic.tokens(s, player);
+        return 10000 * Heuristic.corners(s, player) + 100 * Heuristic.tokens(s, player) + Heuristic.moves(s);
     }
 
     @Override
