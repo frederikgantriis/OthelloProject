@@ -182,8 +182,6 @@ abstract class BaseAI implements IOthelloAI {
         });
     }
 
-    public Random random = new Random();
-
     public abstract int heuristic(BetterGameState s, int player);
 
     public boolean isCutOff(int depth) {
@@ -401,10 +399,10 @@ class BetterGameState {
             // Place the token at the given place
             board[place.col][place.row] = currentPlayer;
             if (currentPlayer == 1) {
-                blackTokens += captures;
+                blackTokens += captures + 1;
                 whiteTokens -= captures;
             } else {
-                whiteTokens += captures;
+                whiteTokens += captures + 1;
                 blackTokens -= captures;
             }
             this.changePlayer();
