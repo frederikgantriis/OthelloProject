@@ -383,7 +383,7 @@ class BetterGameState {
             return false;
 
         boolean capturesFound = false;
-        var captures = 1;
+        var captures = 0;
         // Capturing all possible opponents of the current player
         for (int deltaX = -1; deltaX <= 1; deltaX++) {
             for (int deltaY = -1; deltaY <= 1; deltaY++) {
@@ -400,10 +400,13 @@ class BetterGameState {
         if (capturesFound) {
             // Place the token at the given place
             board[place.col][place.row] = currentPlayer;
-            if (currentPlayer == 1)
+            if (currentPlayer == 1) {
                 blackTokens += captures;
-            else
+                whiteTokens -= captures;
+            } else {
                 whiteTokens += captures;
+                blackTokens -= captures;
+            }
             this.changePlayer();
             return true;
         } else {
