@@ -2,8 +2,16 @@ import java.util.*;
 import java.util.function.BiFunction;
 
 public class OthelloAIBob extends CornersMovesTokens {
+    @Override
+    public boolean isCutOff(int depth) {
+        // We set our cut-off at 10 because that usually finishes in less than 10 seconds. The 10-second limit is of
+        // course very machine dependent; if the machine running the AI is fast this can be increased, and likewise
+        // if the machine is slow just feel free to decrease it.
+        return depth >= 10;
+    }
 }
 
+// AI that weighs corners highest.
 class Corners extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -11,6 +19,7 @@ class Corners extends BaseAI {
     }
 }
 
+// AI that weighs tokens highest.
 class Tokens extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -23,6 +32,7 @@ class Tokens extends BaseAI {
     }
 }
 
+// AI that weighs moves highest.
 class Moves extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -35,6 +45,7 @@ class Moves extends BaseAI {
     }
 }
 
+// AI that weighs corners highest, then tokens.
 class CornersTokens extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -42,6 +53,7 @@ class CornersTokens extends BaseAI {
     }
 }
 
+// AI that weighs moves highest, then tokens.
 class MovesTokens extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -54,6 +66,7 @@ class MovesTokens extends BaseAI {
     }
 }
 
+// AI that weighs corners highest, then moves, then tokens.
 class CornersMovesTokens extends BaseAI {
     @Override
     public int heuristic(BetterGameState s, int player) {
@@ -112,6 +125,7 @@ class Heuristic {
         return playerValue + opponentValue != 0 ? 10 * (playerValue - opponentValue) / (playerValue + opponentValue) : 0;
     }
 
+    // Calculate the number of corners the given player currently has, and how many they can gain in the next move.
     static int cornerValue(BetterGameState s, int player) {
         var board = s.getBoard();
 
@@ -178,8 +192,6 @@ abstract class BaseAI implements IOthelloAI {
         });
     }
 
-    public Random random = new Random();
-
     public abstract int heuristic(BetterGameState s, int player);
 
     public boolean isCutOff(int depth) {
@@ -192,20 +204,25 @@ abstract class BaseAI implements IOthelloAI {
         return move.position();
     }
 
+    // Core of the algorithm. It is written to closely match the pseudo-code, except that Value has a MinMax argument
+    // that provides context for whether we're evaluating a Min-Value or Max-Value call. This is to avoid code
+    // duplication, which we found to reduce our number of programming mistakes.
     public Tuple Value(BetterGameState s, int alpha, int beta, int depth, MinMax minmax) {
         if (s.isFinished() || isCutOff(depth)) {
             return new Tuple(evaluate(s, minmax), null);
         }
 
         var it = s.legalMoves();
+
+        // If we have no legal moves for just let the other player move again.
         if (!it.hasNext()) {
             s.changePlayer();
             return new Tuple(Value(s, alpha, beta, depth + 1, minmax.next()).value(), null);
         }
 
-        var v = minmax.extreme;
-        var move = new Position(-1, -1);
-
+        // If we are at depth 0 we shuffle our available actions to facilitate some randomness in our moves. The move
+        // we end up choosing should still be the optimal, but in cases where two or more moves are equally good, we avoid
+        // always choosing the first.
         if (depth == 0) {
             var actions = new ArrayList<Position>();
             it.forEachRemaining(actions::add);
@@ -213,15 +230,24 @@ abstract class BaseAI implements IOthelloAI {
             it = actions.iterator();
         }
 
+        var v = minmax.extreme;
+        var move = new Position(-1, -1);
         while (it.hasNext()) {
             var action = it.next();
+
+            // Result of performing the action
             var sNew = new BetterGameState(s);
             sNew.insertToken(action);
+
+            // Recursive call
             var result = Value(sNew, alpha, beta, depth + 1, minmax.next());
 
             if (minmax.cmp.apply(result.value(), v)) {
                 v = result.value();
                 move = action;
+
+                // In the case of minmax == Min, alpha remains the same and only beta changes. Same but reversed is
+                // true for minmax == Max.
                 alpha = minmax.alpha.apply(alpha, v);
                 beta = minmax.beta.apply(beta, v);
             }
@@ -379,7 +405,7 @@ class BetterGameState {
             return false;
 
         boolean capturesFound = false;
-        var captures = 1;
+        var captures = 0;
         // Capturing all possible opponents of the current player
         for (int deltaX = -1; deltaX <= 1; deltaX++) {
             for (int deltaY = -1; deltaY <= 1; deltaY++) {
@@ -396,10 +422,13 @@ class BetterGameState {
         if (capturesFound) {
             // Place the token at the given place
             board[place.col][place.row] = currentPlayer;
-            if (currentPlayer == 1)
-                blackTokens += captures;
-            else
-                whiteTokens += captures;
+            if (currentPlayer == 1) {
+                blackTokens += captures + 1;
+                whiteTokens -= captures;
+            } else {
+                whiteTokens += captures + 1;
+                blackTokens -= captures;
+            }
             this.changePlayer();
             return true;
         } else {
